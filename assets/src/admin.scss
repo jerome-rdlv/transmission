@@ -1,0 +1,148 @@
+.JdtForm {
+    &-row {
+        margin: 15px 0;
+    }
+    label {
+        display: block;
+        font-weight: bold;
+        margin: 0 0 10px;
+    }
+    
+    input[type="text"],
+    textarea {
+        box-sizing: border-box;
+        font-size: 14px;
+        line-height: 1.4;
+        padding: 3px 5px;
+        width: 100%;
+    }
+    textarea {
+        resize: vertical;
+    }
+    input[type="color"] {
+        height: 38px;
+        width: 62px;
+    }
+}
+
+.JdtProg {
+    $root: &;
+    
+    $titleHeight: 5em;
+    
+    &-days {
+        align-items: stretch;
+        display: flex;
+        flex-flow: row nowrap;
+        min-height: 50em;
+        margin-top: $titleHeight;
+        margin-left: 3em;
+        position: relative;
+
+        &:before {
+            border-bottom: 1px solid #ccc;
+            content: '';
+            display: block;
+            left: 0;
+            position: absolute;
+            width: 100%;
+        }
+    }
+    
+    &-hour {
+        display: block;
+        left: 0;
+        position: absolute;
+        text-align: right;
+        width: 100%;
+        
+        &:before {
+            border-top: 1px solid transparentize(black, .9);
+            content: '';
+            display: block;
+            width: 100%
+        }
+        
+        &-inner {
+            color: #666;
+            display: block;
+            left: -5em;
+            font-size: 10px;
+            transform: translateY(-50%);
+            position: relative;
+            width: 4em;
+        }
+    }
+
+    &-day {
+        position: relative;
+        flex-grow: 1;
+        
+        &:not(:last-child) {
+            margin-right: 10px;
+        }
+    }
+    
+    &-title {
+        box-sizing: border-box;
+        color: #666;
+        font-size: 12px;
+        left: 0;
+        line-height: 1;
+        margin: 0;
+        padding-bottom: 1em;
+        padding-right: 10px;
+        position: absolute;
+        text-align: right;
+        text-transform: uppercase;
+        transform: translateY(-100%);
+        width: 100%;
+        
+        &-day {
+            display: block;
+        }
+        &-date {
+            font-size: 10px;
+            font-weight: normal;
+        }
+    }
+
+    &-item {
+        position: relative;
+    }
+    &-info {
+        box-sizing: border-box;
+        font-size: 12px;
+        left: 0;
+        padding-right: 10px;
+        position: absolute;
+        text-align: right;
+        width: 100%;
+        z-index: 1;
+        
+        &-inner {
+            background: transparentize(#f1f1f1, .15);
+            box-sizing: border-box;
+            display: inline-block;
+            line-height: 1.6;
+            max-width: 100%;
+            overflow: hidden;
+            padding: 0 .5em;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        &-playtime {
+            font-size: 10px;
+        }
+    }
+    
+    &-session {
+        height: 100%;
+        max-width: 6em;
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: 100%;
+    }
+}
