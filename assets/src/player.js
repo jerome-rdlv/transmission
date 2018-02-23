@@ -29,6 +29,7 @@
             error: onSourceError
         });
         
+        console.log('Cumulative duration of transmissions: '+ formatDuration(playlist.duration));
         console.log('Current playing time: '+ playlist.time);
     }
     
@@ -40,8 +41,13 @@
         console.log('Playing '+ current.title +' at '+ formatDuration(audio.currentTime)); 
     }
     
-    function formatDuration(duration) {
-        return new Date(1000 * duration).toISOString().substr(11, 8);
+    function formatDuration(seconds) {
+        var output = new Date(null, null, null, null, null, seconds).toTimeString().match(/\d{2}:\d{2}:\d{2}/)[0];
+        var days = parseInt(seconds / 3600 / 24);
+        if (days > 0) {
+            output = days +'d '+ output;
+        }
+        return output;
     }
 
     function onEnded() {
