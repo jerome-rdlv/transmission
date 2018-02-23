@@ -5,7 +5,7 @@
         return;
     }
 
-    var index = parseInt(playlist.index);
+    var index = 0;
     var current = playlist.sessions[index];
     var offset = parseInt(playlist.offset);
     var audio = null;

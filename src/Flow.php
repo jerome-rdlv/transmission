@@ -184,10 +184,16 @@ class Flow
      */
     public function toArray()
     {
+        if (!$this->reference) {
+            $this->next();
+        }
         $dateFormat = 'Y-m-d H:i:s';
         $output = get_object_vars($this);
+        unset($output['reference']);
+        unset($output['sessions']);
+        
         foreach ($output as $key => $value) {
-            if ($key === 'sessions') {
+            /*if ($key === 'sessions') {
                 // to get sessions loop until first one is found again 
                 foreach ($output[$key] as $index => $session) {
                     $output[$key][$index] = get_object_vars($session);
@@ -199,7 +205,27 @@ class Flow
                     }
                 }
             }
-            elseif ($value instanceof DateTime) {
+            else*/if ($value instanceof DateTime) {
+                $output[$key] = $value->format($dateFormat);
+            }
+        }
+        
+        $output['offset'] = $this->reference->offset;
+        $session = clone $this->reference;
+        $output['sessions'] = [];
+        do {
+            $output['sessions'][] = $this->sessionToArray($session, $dateFormat);
+            $session = $session->next;
+        } while ($session->id !== $this->reference->id);
+        return $output;
+    }
+    
+    private function sessionToArray($session, $dateFormat)
+    {
+        $output = get_object_vars($session);
+        unset($output['next']);
+        foreach ($output as $key => $value) {
+            if ($value instanceof DateTime) {
                 $output[$key] = $value->format($dateFormat);
             }
         }

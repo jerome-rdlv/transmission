@@ -84,7 +84,7 @@ class Transmission
     {
         if (is_front_page()) {
             $time = new DateTime();
-            $time->sub(new \DateInterval('PT11M'));
+//            $time->sub(new \DateInterval('PT11M'));
             wp_localize_script('transmission', 'jdanger_transmission', $this->getFlow($time)->toArray());
             wp_enqueue_script('transmission');
             add_action('wp_footer', [$this, 'playOnFront']);
