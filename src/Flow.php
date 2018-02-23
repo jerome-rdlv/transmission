@@ -3,10 +3,13 @@
 
 namespace Rdlv\JDanger;
 
+use DateInterval;
 use DateTime;
 
 class Flow
 {
+    const PLACEHOLDER_ID = 'placeholder';
+    
     /** @var array */
     private $sessions;
 
@@ -16,21 +19,17 @@ class Flow
     /** @var DateTime */
     private $time;
     
-    /** @var float */
-    private $offset;
-    
-    /** @var int */
-    private $index;
+    /** @var object */
+    private $reference = null;
     
     public function __construct($sessions, $time = null)
     {
         if ($sessions) {
-            if ($time === null) {
-                // week-begin by default
-                $time = DateTime::createFromFormat(
-                    'Y-m-d H:i:s',
-                    date('Y-m-d', strtotime('-'. (date('w')-1) .' days')) .' 00:00:00'
-                );
+            // create sessions loop
+            $sessionsCount = count($sessions);
+            foreach ($sessions as $index => &$session) {
+//                $session->prev = $index > 0 ? $sessions[$index - 1] : $sessions[$sessionsCount - 1];
+                $session->next = ($index + 1 < $sessionsCount) ? $sessions[$index + 1] : $sessions[0];
             }
             
             $this->sessions = $sessions;
@@ -39,8 +38,34 @@ class Flow
                 return $carry + $session->duration;
             }, 0);
 
-            $this->setTime($time);
+            if ($time !== null) {
+                $this->setTime($time);
+            }
         }
+    }
+
+    /**
+     * @param DateTime $time
+     * @return object
+     */
+    private function getMostRecent($time)
+    {
+        $session = null;
+        foreach ($this->sessions as $session) {
+            if ($session->date < $time) {
+                return $session;
+            }
+        }
+        // $time is before first session
+        $placeholder = new \stdClass();
+        $placeholder->id = self::PLACEHOLDER_ID;
+        $placeholder->date = clone $time;
+        $placeholder->duration = $session->date->format('U') - $placeholder->date->format('U');
+        $placeholder->offset = 0;
+        $placeholder->next = $session;
+//        $placeholder->prev = $placeholder;
+        $placeholder->color = '#fff';
+        return null;
     }
     
     public function setTime($time)
@@ -51,40 +76,85 @@ class Flow
         else {
             $this->time = clone $time;
         }
+        $this->reference = null;
+    }
 
-        $last = $this->sessions[0];
-
-        // time since last publication
-        $delta = $this->time->format('U') - $last->date->format('U');
-
-        // current time in concatenated transmissions
-        $this->offset = $delta % $this->duration;
-        $this->index = 0;
-        while ($this->offset >= $this->sessions[$this->index]->duration) {
-            $this->offset -= $this->sessions[$this->index]->duration;
-            ++$this->index;
-
-            if ($this->index >= count($this->sessions)) {
-                $this->index = 0;
+    /**
+     * Interrupting session is a session whose publication
+     * occurs during reference session.
+     * @return object|null Interrupting session or null if none
+     */
+    private function getInterruptingSession()
+    {
+        if ($this->reference !== null) {
+            $start = (int)$this->time->format('U');
+            $end = $start + $this->reference->duration;
+            for ($i = count($this->sessions) - 1; $i >= 0; --$i) {
+                $session = $this->sessions[$i];
+                $publication = $session->date->format('U');
+                if ($publication > $start && $publication < $end) {
+                    return $session;
+                }
             }
         }
+        return null;
     }
-
-    /**
-     * @return int Index of current session
-     */
-    public function getIndex()
+    
+    public function next()
     {
-        return $this->index;
-    }
+        if ($this->reference) {
+            
+            // move time
+            $this->time->add(DateInterval::createFromDateString(
+                sprintf('%d seconds', $this->reference->duration)
+            ));
+            
+            // move to next published session
+            do {
+                $this->reference = $this->reference->next;
+            } while ($this->reference->date > $this->time);
+            
+            // look for publications during current session
+            $interrupting = $this->getInterruptingSession();
+            if ($interrupting) {
+                // reference is truncated by publication of a new session
+                $this->reference = clone $this->reference;
+                $this->reference->duration = $interrupting->date->format('U') - $this->time->format('U');
+                $this->reference->next = $interrupting;
+            }
+        }
+        else {
+            $this->reference = $this->getMostRecent($this->time);
 
-    /**
-     * @return float Play offset of current session
-     */
-    public function getOffset()
-    {
-        return $this->offset;
+            // time since reference publication
+            $offset = $this->time->format('U') - $this->reference->date->format('U');
+
+            while ($offset >= $this->reference->duration) {
+                $offset -= $this->reference->duration;
+
+                // move to next published session
+                do {
+                    $this->reference = $this->reference->next;
+                } while ($this->reference->date > $this->time);
+            }
+
+            if ($offset) {
+                $this->reference = clone $this->reference;
+                $this->reference->offset = $offset;
+                $this->reference->duration = $this->reference->duration - $offset;
+            }
+        }
+        
+        return $this->reference;
     }
+//    
+//    /**
+//     * @return float Play offset of current session
+//     */
+//    public function getOffset()
+//    {
+//        return $this->offset;
+//    }
 
     /**
      * @return DateTime Time position in the flow
@@ -99,14 +169,14 @@ class Flow
         return $this->sessions;
     }
 
-    /**
-     * @param $index
-     * @return object
-     */
-    public function getSession($index)
-    {
-        return $this->sessions[$index % count($this->sessions)];
-    }
+//    /**
+//     * @param $index
+//     * @return object
+//     */
+//    public function getSession($index)
+//    {
+//        return $this->sessions[$index % count($this->sessions)];
+//    }
 
     /**
      * @return array the array representation of the object or null
@@ -118,6 +188,7 @@ class Flow
         $output = get_object_vars($this);
         foreach ($output as $key => $value) {
             if ($key === 'sessions') {
+                // to get sessions loop until first one is found again 
                 foreach ($output[$key] as $index => $session) {
                     $output[$key][$index] = get_object_vars($session);
                     

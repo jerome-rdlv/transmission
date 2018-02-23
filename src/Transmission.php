@@ -84,7 +84,7 @@ class Transmission
     {
         if (is_front_page()) {
             $time = new DateTime();
-//            $time->add(new \DateInterval('PT1H12M'));
+            $time->sub(new \DateInterval('PT11M'));
             wp_localize_script('transmission', 'jdanger_transmission', $this->getFlow($time)->toArray());
             wp_enqueue_script('transmission');
             add_action('wp_footer', [$this, 'playOnFront']);
@@ -219,7 +219,7 @@ class Transmission
     public function getSessions()
     {
         global $wpdb;
-        $transmissions = [];
+        $session = [];
         
         $results = $wpdb->get_results($wpdb->prepare("
             SELECT
@@ -247,9 +247,9 @@ class Transmission
             $result->meta = unserialize($result->meta);
             $result->playtime = $result->meta['playtime'];
             unset($result->meta['playtime']);
-            $transmissions[] = $result;
+            $session[] = $result;
         }
         
-        return $transmissions;
+        return $session;
     }
 }

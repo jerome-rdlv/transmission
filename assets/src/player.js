@@ -5,9 +5,9 @@
         return;
     }
 
-    var index = playlist.index;
+    var index = parseInt(playlist.index);
     var current = playlist.sessions[index];
-    var offset = playlist.offset;
+    var offset = parseInt(playlist.offset);
     var audio = null;
     init(playlist);
     
@@ -38,11 +38,13 @@
     }
 
     function onPlaying() {
-        console.log('Playing '+ current.title +' at '+ formatDuration(audio.currentTime)); 
+        console.log('Playing '+ current.title +' ('+ formatDuration(current.duration) +') at '+ formatDuration(audio.currentTime)); 
     }
     
     function formatDuration(seconds) {
-        var output = new Date(null, null, null, null, null, seconds).toTimeString().match(/\d{2}:\d{2}:\d{2}/)[0];
+        var output = new Date(null, null, null, null, null, Math.max(0, seconds))
+            .toTimeString()
+            .replace(/^.*(\d{2}):(\d{2}):(\d{2}).*$/, '$1h $2m $3s');
         var days = parseInt(seconds / 3600 / 24);
         if (days > 0) {
             output = days +'d '+ output;
@@ -51,8 +53,7 @@
     }
 
     function onEnded() {
-        console.log('End of '+ current.title);
-        index = index + 1 < playlist.sessions.length ? index + 1 : 0;
+        index = (index + 1 < playlist.sessions.length) ? index + 1 : 0;
         current = playlist.sessions[index];
         offset = 0;
         audio.src = current.url;
