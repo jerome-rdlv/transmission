@@ -1,9 +1,8 @@
 <?php
-use JDanger\Transmission;
-$prog = Transmission::getInstance()->getProgramme();
+use Rdlv\JDanger\Transmission;
+$flow = Transmission::getInstance()->getFlow();
 
-/** @var DateTime $start */
-$start = $prog->getStart();
+$start = $flow->getTime();
 $end = clone $start;
 $cols = 7;
 $end->add(new DateInterval('P'. $cols .'D'));
@@ -20,7 +19,7 @@ function openDay(DateTime $date)
 ?>
 <div class="wrap JdtProg">
     <h1>Programme</h1>
-    <?php if ($prog): ?>
+    <?php if ($flow): ?>
         <div class="JdtProg-days">
             <div class="JdtProg-hours">
                 <?php for ($hour = 0; $hour <= 24; ++$hour): ?>
@@ -47,16 +46,16 @@ function openDay(DateTime $date)
                     </h2>
                 <?php
                 if ($date != $start) {
-                    $prog->setStart($tomorrow);
-                    $date = $prog->getStart();
+                    $flow->setTime($tomorrow);
+                    $date = $flow->getTime();
                 }
-                $index = $prog->getIndex();
-                $offset = $prog->getOffset();
+                $index = $flow->getIndex();
+                $offset = $flow->getOffset();
                 $tomorrow->add($dayInterval);
                 ?>
                 <?php while ($date < $tomorrow): ?>
                     <?php
-                    $session = $prog->getSession($index);
+                    $session = $flow->getSession($index);
                     $duration = $session->duration - $offset;
                     $timeLeft = $tomorrow->format('U') - $date->format('U');
                     if ($duration > $timeLeft) {
@@ -64,20 +63,20 @@ function openDay(DateTime $date)
                     }
                     $height = $duration / 3600 * 100 / 24;
                     ?>
-                    <div class="JdtProg-item" style="height: <?php echo $height ?>%;" id="transmission-<?php echo $session->id ?>">
+                    <div class="JdtProg-item" style="height: <?php echo $height ?>%;" data-id="<?php echo $session->id ?>">
                         <?php if (!$offset): ?>
                         <span class="JdtProg-info" style="border-color:<?php echo $session->color ?>">
                             <span class="JdtProg-info-inner">
+                                <span class="JdtProg-info-playtime"><?php echo $date->format('H:i') ?></span>
                                 <?php echo $session->title ?><?php if ($offset) echo ' (suite)' ?>
-                                <span class="JdtProg-info-playtime">/ <?php echo $session->playtime ?></span>
                             </span>
                         </span>
                         <?php endif ?>
                         <div class="JdtProg-session"
-                             <?php if ($offset) echo ' title="'. $session->title .' (suite)"' ?>
+                             title="<?php echo $date->format('H:i') .' / '. $session->title . ($offset ? ' (suite)' : '') ?>"
                              style="background:<?php echo $session->color ?>;"></div>
                     </div>
-                    <?php $date->add(DateInterval::createFromDateString(($session->duration - $offset) .' seconds')) ?>
+                    <?php $date->add(DateInterval::createFromDateString((int)($session->duration - $offset) .' seconds')) ?>
                     <?php ++$index ?>
                     <?php $offset = 0 ?>
                 <?php endwhile ?>

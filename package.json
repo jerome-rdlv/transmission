@@ -13,5 +13,9 @@
   },
   "engines": {
     "yarn": ">= 1.0.0"
+  },
+  "dependencies": {
+    "gulp-if": "^2.0.2",
+    "yargs": "^11.0.0"
   }
 }

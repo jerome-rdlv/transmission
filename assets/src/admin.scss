@@ -34,9 +34,10 @@
         align-items: stretch;
         display: flex;
         flex-flow: row nowrap;
-        min-height: 50em;
+        min-height: 55em;
         margin-top: $titleHeight;
         margin-left: 3em;
+        max-width: 100em;
         position: relative;
 
         &:before {
@@ -91,9 +92,9 @@
         line-height: 1;
         margin: 0;
         padding-bottom: 1em;
-        padding-right: 10px;
+        padding-left: 10px;
         position: absolute;
-        text-align: right;
+        text-align: left;
         text-transform: uppercase;
         transform: translateY(-100%);
         width: 100%;
@@ -114,9 +115,9 @@
         box-sizing: border-box;
         font-size: 12px;
         left: 0;
-        padding-right: 10px;
+        padding-left: 10px;
         position: absolute;
-        text-align: right;
+        text-align: left;
         width: 100%;
         z-index: 1;
         
@@ -124,15 +125,17 @@
             background: transparentize(#f1f1f1, .15);
             box-sizing: border-box;
             display: inline-block;
-            line-height: 1.6;
+            line-height: 1.1;
+            min-width: 6em;
             max-width: 100%;
             overflow: hidden;
-            padding: 0 .5em;
+            padding: .2em .5em;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
         
         &-playtime {
+            display: block;
             font-size: 10px;
         }
     }
@@ -141,7 +144,7 @@
         height: 100%;
         max-width: 6em;
         position: absolute;
-        right: 0;
+        left: 0;
         top: 0;
         width: 100%;
     }

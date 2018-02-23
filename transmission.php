@@ -1,6 +1,6 @@
 <?php
 
-use JDanger\Transmission;
+use Rdlv\JDanger\Transmission;
 
 require_once __DIR__ .'/vendor/autoload.php';
 

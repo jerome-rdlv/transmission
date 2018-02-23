@@ -1,6 +1,6 @@
 <?php
 
-namespace JDanger;
+namespace Rdlv\JDanger;
 
 use Exception;
 use getID3;
@@ -22,6 +22,7 @@ class Meta
     const PLAYTIME = 'playtime';
     const DURATION = 'duration';
     const FORMAT = 'format';
+    const MIME_TYPE = 'type';
     const PICTURE_DATA = 'picture_data';
     const PICTURE_EXT = 'picture_ext';
     const PICTURE_TYPE = 'picture_type';
@@ -74,7 +75,13 @@ class Meta
         ],
         self::PICTURE_TYPE => [
             'comments/picture/0/image_mime',
-        ]
+        ],
+        self::FORMAT => [
+            'fileformat',
+        ],
+        self::MIME_TYPE => [
+            'mime_type',
+        ],
     ];
 
     const ID3V1 = 'id3v1';

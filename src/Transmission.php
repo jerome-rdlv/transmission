@@ -1,6 +1,6 @@
 <?php
 
-namespace JDanger;
+namespace Rdlv\JDanger;
 
 use DateTime;
 
@@ -68,18 +68,38 @@ class Transmission
                 'Programme',
                 'Programme',
                 'read',
-                'jdt_programme',
+                'jdt_flow',
                 function () {
-                    include __DIR__ .'/../inc/programme.php';
+                    include __DIR__ .'/../inc/flow.php';
                 }
             );
         });
+        
+        // play on front
+        wp_register_script('transmission', plugins_url('assets/dist/player.js', __DIR__), ['mediaelement-core'], false, true);
+        add_action('wp', [$this, 'lateInit']);
+    }
+    
+    public function lateInit()
+    {
+        if (is_front_page()) {
+            $time = new DateTime();
+//            $time->add(new \DateInterval('PT1H12M'));
+            wp_localize_script('transmission', 'jdanger_transmission', $this->getFlow($time)->toArray());
+            wp_enqueue_script('transmission');
+            add_action('wp_footer', [$this, 'playOnFront']);
+        }
+    }
+    
+    public function playOnFront()
+    {
+        echo '<!-- Transmission -->';
     }
 
     public function enqueueScripts()
     {
         global $post_type, $plugin_page;
-        if ($post_type === self::CPT || $plugin_page == 'jdt_programme') {
+        if ($post_type === self::CPT || $plugin_page == 'jdt_flow') {
             wp_enqueue_style('jdt-main');
         }
     }
@@ -111,37 +131,37 @@ class Transmission
 
             update_post_meta($post_id, 'jdt_url', $url);
             
-            $meta = get_post_meta($post_id, 'jdt_meta', true);
-            if (!$meta) {
-                $meta = Meta::getMeta($url);
-                // handle duration
-                update_post_meta($post_id, 'jdt_duration', $meta[Meta::DURATION]);
+            $meta = Meta::getMeta($url);
+            
+            // handle duration
+            update_post_meta($post_id, 'jdt_duration', $meta[Meta::DURATION]);
 
-                // handle meta
-                update_post_meta($post_id, 'jdt_meta', array_filter($meta, function ($v, $k) {
-                    return array_key_exists($k, self::FIELDS) ? $v : false;
-                }, ARRAY_FILTER_USE_BOTH));
+            // if picture, save it
+            $img = $meta[Meta::PICTURE_DATA];
+            $imgHash = sha1($img);
+            if ($img && get_post_meta($post_id, 'jdt_img_hash', true) !== $imgHash) {
+                $attachmentId = $this->handleImage(
+                    $post_id,
+                    $img,
+                    pathinfo($url, PATHINFO_FILENAME) . '.' . $meta[Meta::PICTURE_EXT],
+                    $meta[Meta::PICTURE_TYPE]
+                );
 
-                // if picture, save it
-                $img = $meta[Meta::PICTURE_DATA];
-                $imgHash = sha1($img);
-                if ($img && get_post_meta($post_id, 'jdt_img_hash', true) !== $imgHash) {
-                    $attachmentId = $this->handleImage(
-                        $post_id,
-                        $img,
-                        pathinfo($url, PATHINFO_FILENAME) . '.' . $meta[Meta::PICTURE_EXT],
-                        $meta[Meta::PICTURE_TYPE]
-                    );
+                if ($attachmentId && !is_wp_error($attachmentId)) {
+                    set_post_thumbnail($post_id, $attachmentId);
 
-                    if ($attachmentId && !is_wp_error($attachmentId)) {
-                        set_post_thumbnail($post_id, $attachmentId);
-
-                        // save picture hash for later comparison
-                        $path = get_attached_file($attachmentId);
-                        update_post_meta($post_id, 'jdt_img_hash', sha1(file_get_contents($path)));
-                    }
+                    // save picture hash for later comparison
+                    $path = get_attached_file($attachmentId);
+                    update_post_meta($post_id, 'jdt_img_hash', sha1(file_get_contents($path)));
                 }
             }
+            
+            unset($meta[Meta::PICTURE_DATA]);
+            unset($meta[Meta::PICTURE_EXT]);
+            unset($meta[Meta::PICTURE_TYPE]);
+
+            // handle meta
+            update_post_meta($post_id, 'jdt_meta', array_filter($meta));
         }
     }
     
@@ -188,12 +208,18 @@ class Transmission
     }
 
     /**
-     * @param null $from
-     * @return Programme
+     * @param null $time
+     * @return Flow
      */
-    public function getProgramme($from = null)
+    public function getFlow($time = null)
+    {
+        return new Flow($this->getSessions(), $time);
+    }
+    
+    public function getSessions()
     {
         global $wpdb;
+        $transmissions = [];
         
         $results = $wpdb->get_results($wpdb->prepare("
             SELECT
@@ -213,6 +239,17 @@ class Transmission
             ORDER BY p.post_date DESC
         ", self::CPT));
         
-        return new Programme($results, $from);
+        // post-treatment
+        $dateFormat = 'Y-m-d H:i:s';
+        foreach ($results as &$result) {
+            $result->date = DateTime::createFromFormat($dateFormat, $result->date);
+            $result->duration = (int)$result->duration;
+            $result->meta = unserialize($result->meta);
+            $result->playtime = $result->meta['playtime'];
+            unset($result->meta['playtime']);
+            $transmissions[] = $result;
+        }
+        
+        return $transmissions;
     }
 }
