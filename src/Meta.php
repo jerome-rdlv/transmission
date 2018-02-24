@@ -70,12 +70,12 @@ class Meta
         self::PUBLISHER => [
             'tags/id3v2/publisher/0',
         ],
-        self::PICTURE_DATA => [
-            'comments/picture/0/data',
-        ],
-        self::PICTURE_TYPE => [
-            'comments/picture/0/image_mime',
-        ],
+//        self::PICTURE_DATA => [
+//            'comments/picture/0/data',
+//        ],
+//        self::PICTURE_TYPE => [
+//            'comments/picture/0/image_mime',
+//        ],
         self::FORMAT => [
             'fileformat',
         ],
@@ -164,14 +164,14 @@ class Meta
                 $meta[$field] = self::getFirstByPaths($raw, $paths);
             }
 
-            if ($meta[self::PICTURE_DATA]) {
-                if (array_key_exists($meta[self::PICTURE_TYPE], self::$extensions)) {
-                    $meta[self::PICTURE_EXT] = self::$extensions[$meta[self::PICTURE_TYPE]];
-                }
-                else {
-                    $meta[self::PICTURE_EXT] = 'jpg';
-                }
-            }
+//            if ($meta[self::PICTURE_DATA]) {
+//                if (array_key_exists($meta[self::PICTURE_TYPE], self::$extensions)) {
+//                    $meta[self::PICTURE_EXT] = self::$extensions[$meta[self::PICTURE_TYPE]];
+//                }
+//                else {
+//                    $meta[self::PICTURE_EXT] = 'jpg';
+//                }
+//            }
             return $meta;
         }
         return null;

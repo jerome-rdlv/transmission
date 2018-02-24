@@ -59,7 +59,8 @@ class Transmission
         add_action('save_post', [$this, 'saveFields'], 10, 2);
 
         // admin
-        wp_register_style('jdt-main', plugins_url('assets/dist/admin.css', __DIR__));
+        wp_register_style('jdt-admin', plugins_url('assets/dist/admin.css', __DIR__));
+        wp_register_script('jdt-admin', plugins_url('assets/dist/admin.js', __DIR__), [], false, true);
 
         add_action('admin_enqueue_scripts', [$this, 'enqueueScripts']);
         add_action('admin_menu', function () {
@@ -84,6 +85,7 @@ class Transmission
     {
         if (is_front_page()) {
             $time = new DateTime();
+            // use this to offset play time
 //            $time->sub(new \DateInterval('PT11M'));
             wp_localize_script('transmission', 'jdanger_transmission', $this->getFlow($time)->toArray());
             wp_enqueue_script('transmission');
@@ -100,7 +102,8 @@ class Transmission
     {
         global $post_type, $plugin_page;
         if ($post_type === self::CPT || $plugin_page == 'jdt_flow') {
-            wp_enqueue_style('jdt-main');
+            wp_enqueue_style('jdt-admin');
+            wp_enqueue_script('jdt-admin');
         }
     }
 
@@ -126,35 +129,52 @@ class Transmission
         $color = isset($_POST['jdt_color']) ? $_POST['jdt_color'] : '';
         update_post_meta($post_id, 'jdt_color', $color);
         
-        $url = isset($_POST['jdt_url']) ? $_POST['jdt_url'] : '';
-        if (get_post_meta($post_id, 'jdt_url', true) !== $url) {
+        $aid = isset($_POST['jdt_aid']) ? $_POST['jdt_aid'] : '';
+        if (get_post_meta($post_id, 'jdt_aid', true) !== $aid) {
+            $url = wp_get_attachment_url($aid);
 
+            update_post_meta($post_id, 'jdt_aid', $aid);
             update_post_meta($post_id, 'jdt_url', $url);
             
+//            $meta = wp_get_attachment_metadata($aid);
             $meta = Meta::getMeta($url);
+            
+            if ($meta['title'] && !$post->title) {
+                global $wpdb;
+                $wpdb->update(
+                    $wpdb->posts,
+                    ['post_title' => $meta['title']],
+                    ['ID' => $post_id]
+                );
+            }
             
             // handle duration
             update_post_meta($post_id, 'jdt_duration', $meta[Meta::DURATION]);
 
             // if picture, save it
-            $img = $meta[Meta::PICTURE_DATA];
-            $imgHash = sha1($img);
-            if ($img && get_post_meta($post_id, 'jdt_img_hash', true) !== $imgHash) {
-                $attachmentId = $this->handleImage(
-                    $post_id,
-                    $img,
-                    pathinfo($url, PATHINFO_FILENAME) . '.' . $meta[Meta::PICTURE_EXT],
-                    $meta[Meta::PICTURE_TYPE]
-                );
-
-                if ($attachmentId && !is_wp_error($attachmentId)) {
-                    set_post_thumbnail($post_id, $attachmentId);
-
-                    // save picture hash for later comparison
-                    $path = get_attached_file($attachmentId);
-                    update_post_meta($post_id, 'jdt_img_hash', sha1(file_get_contents($path)));
-                }
+            $imgId = get_post_meta($aid, '_thumbnail_id', true);
+            if ($imgId) {
+                set_post_thumbnail($post_id, $imgId);
             }
+            
+//            $img = $meta[Meta::PICTURE_DATA];
+//            $imgHash = sha1($img);
+//            if ($img && get_post_meta($post_id, 'jdt_img_hash', true) !== $imgHash) {
+//                $attachmentId = $this->handleImage(
+//                    $post_id,
+//                    $img,
+//                    pathinfo($url, PATHINFO_FILENAME) . '.' . $meta[Meta::PICTURE_EXT],
+//                    $meta[Meta::PICTURE_TYPE]
+//                );
+//
+//                if ($attachmentId && !is_wp_error($attachmentId)) {
+//                    set_post_thumbnail($post_id, $attachmentId);
+//
+//                    // save picture hash for later comparison
+//                    $path = get_attached_file($attachmentId);
+//                    update_post_meta($post_id, 'jdt_img_hash', sha1(file_get_contents($path)));
+//                }
+//            }
             
             unset($meta[Meta::PICTURE_DATA]);
             unset($meta[Meta::PICTURE_EXT]);
