@@ -3,6 +3,7 @@
 namespace Rdlv\JDanger;
 
 use DateTime;
+use WP_Query;
 
 class Transmission
 {
@@ -38,6 +39,8 @@ class Transmission
     ];
     
     const CPT = 'jdanger_transmission';
+    const RSS_ACTION = 'transmission_rss';
+    const RSS_URL = 'feed/transmission';
     
     public function __construct()
     {
@@ -50,7 +53,8 @@ class Transmission
                 'name'          => 'Transmissions',
                 'singular_name' => 'Transmission',
             ],
-            'public'    => false,
+            'public'    => true,
+            'has_archive' => true,
             'show_ui'   => true,
             'menu_icon' => 'dashicons-playlist-audio',
             'supports'  => [
@@ -91,11 +95,22 @@ class Transmission
         add_action('wp', [$this, 'lateInit']);
         
         // podcast
+//        add_rewrite_rule('^'. self::RSS_URL .'/?', 'index.php?action='. self::RSS_ACTION);
+        add_action('parse_query', [$this, 'rssFeed']);
         add_action('wp_head', function () {
-            echo '<link rel="alternate" type="application/rss+xml" title=" &raquo; Feed" href="http://transmission.jdanger.dev.rdlv/index.php/feed/" />';
+            printf(
+                '<link rel="alternate" type="application/rss+xml" title="Transmission Podcast" href="%s" />',
+                get_post_type_archive_feed_link(Transmission::CPT)
+            );
+        });
+        add_filter('request', function ($qv) {
+            if (isset($qv['feed'])) {
+                $qv['post_type'] = get_post_types();
+            }
+            return $qv;
         });
     }
-    
+
     public function lateInit()
     {
         if (is_front_page()) {
@@ -104,15 +119,9 @@ class Transmission
 //            $time->sub(new \DateInterval('PT11M'));
             wp_localize_script('transmission', 'jdanger_transmission', $this->getFlow($time)->toArray());
             wp_enqueue_script('transmission');
-            add_action('wp_footer', [$this, 'playOnFront']);
         }
     }
     
-    public function playOnFront()
-    {
-        echo '<!-- Transmission -->';
-    }
-
     public function enqueueScripts()
     {
         global $post_type, $plugin_page;
@@ -330,10 +339,26 @@ class Transmission
             $result->length = (int)$result->length;
             $result->meta = unserialize($result->meta);
             $result->length_formatted = $result->meta['length_formatted'];
-            unset($result->meta['length_formatted']);
             $session[] = $result;
         }
         
         return $session;
+    }
+
+    public function rssFeed(WP_Query $query)
+    {
+        if (is_admin() || !$query->is_main_query() || !$query->get('feed')) {
+            return;
+        }
+        if (strpos($_SERVER['REQUEST_URI'], self::CPT) === false) {
+            return;
+        }
+        
+        $sessions = $this->getSessions();
+        
+        header('Content-type: application/rss+xml');
+        echo '<?xml version="1.0" encoding="'. get_option('blog_charset') .'"?>'."\n";
+        include __DIR__ .'/../inc/rss.xml.php';
+        exit;
     }
 }

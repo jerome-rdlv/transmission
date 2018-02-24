@@ -17,7 +17,7 @@
         var node = document.createElement('audio');
         node.setAttribute('id', 'jdt-audio');
         node.setAttribute('src', current.url);
-        node.setAttribute('type', current.meta.type);
+        node.setAttribute('type', current.meta.mime_type);
         node.setAttribute('preload', 'auto');
         node.setAttribute('style', 'position:absolute;width:1px;height:1px;opacity:0;');
         document.querySelector('body').appendChild(node);

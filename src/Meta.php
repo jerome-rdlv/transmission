@@ -24,6 +24,7 @@ class Meta
     const DATA_FORMAT = 'dataformat';
     const MIME_TYPE = 'mime_type';
     const IMAGE = 'image';
+    const FILESIZE = 'filesize';
     
     const IMAGE_DATA = 'data';
     const IMAGE_EXTENSION = 'extension';
@@ -77,6 +78,9 @@ class Meta
         ],
         self::MIME_TYPE        => [
             'mime_type',
+        ],
+        self::FILESIZE         => [
+            'filesize',
         ],
     ];
     
