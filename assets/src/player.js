@@ -29,7 +29,7 @@
             error: onSourceError
         });
         
-        console.log('Cumulative duration of transmissions: '+ formatDuration(playlist.duration));
+        console.log('Cumulative length of transmissions: '+ formatLength(playlist.length));
         console.log('Current playing time: '+ playlist.time);
     }
     
@@ -38,10 +38,10 @@
     }
 
     function onPlaying() {
-        console.log('Playing '+ current.title +' ('+ formatDuration(current.duration) +') at '+ formatDuration(audio.currentTime)); 
+        console.log('Playing '+ current.title +' ('+ formatLength(current.length) +') at '+ formatLength(audio.currentTime)); 
     }
     
-    function formatDuration(seconds) {
+    function formatLength(seconds) {
         var output = new Date(null, null, null, null, null, Math.max(0, seconds))
             .toTimeString()
             .replace(/^.*(\d{2}):(\d{2}):(\d{2}).*$/, '$1h $2m $3s');

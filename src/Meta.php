@@ -15,78 +15,78 @@ class Meta
     const ALBUM = 'album';
     const ARTIST = 'artist';
     const YEAR = 'year';
-    const TRACK = 'track';
+    const TRACK = 'track_number';
     const GENRE = 'genre';
     const PUBLISHER = 'publisher';
     const BITRATE = 'bitrate';
-    const PLAYTIME = 'playtime';
-    const DURATION = 'duration';
-    const FORMAT = 'format';
-    const MIME_TYPE = 'type';
-    const PICTURE_DATA = 'picture_data';
-    const PICTURE_EXT = 'picture_ext';
-    const PICTURE_TYPE = 'picture_type';
+    const LENGTH_FORMATTED = 'length_formatted';
+    const LENGTH = 'length';
+    const DATA_FORMAT = 'dataformat';
+    const MIME_TYPE = 'mime_type';
+    const IMAGE = 'image';
+    
+    const IMAGE_DATA = 'data';
+    const IMAGE_EXTENSION = 'extension';
+    const IMAGE_MIME = 'mime';
 
     private static $fields = [
-        self::TITLE => [
+        self::TITLE            => [
             'tags/id3v2/title/0',
             'tags/id3v1/title/0',
         ],
-        self::ALBUM => [
+        self::ALBUM            => [
             'tags/id3v2/album/0',
             'tags/id3v1/album/0',
         ],
-        self::ARTIST => [
+        self::ARTIST           => [
             'tags/id3v2/artist/0',
             'tags/id3v1/artist/0',
         ],
-        self::YEAR => [
+        self::YEAR             => [
             'tags/id3v2/year/0',
             'tags/id3v1/year/0',
         ],
-        self::TRACK => [
+        self::TRACK            => [
             'tags/id3v2/track_number/0',
             'tags/id3v1/track/0',
         ],
-        self::GENRE => [
+        self::GENRE            => [
             'tags/id3v2/genre/0',
             'tags/id3v1/genre/0',
         ],
-        self::PUBLISHER => [
+        self::PUBLISHER        => [
             'tags/id3v2/publisher/0',
         ],
-        self::BITRATE => [
+        self::BITRATE          => [
             'bitrate',
         ],
-        self::PLAYTIME => [
+        self::LENGTH_FORMATTED => [
             'playtime_string',
         ],
-        self::DURATION => [
+        self::LENGTH           => [
             'playtime_seconds',
         ],
-        self::PUBLISHER => [
+        self::PUBLISHER        => [
             'tags/id3v2/publisher/0',
         ],
-        self::PUBLISHER => [
+        self::PUBLISHER        => [
             'tags/id3v2/publisher/0',
         ],
-//        self::PICTURE_DATA => [
-//            'comments/picture/0/data',
-//        ],
-//        self::PICTURE_TYPE => [
-//            'comments/picture/0/image_mime',
-//        ],
-        self::FORMAT => [
+        self::DATA_FORMAT      => [
             'fileformat',
         ],
-        self::MIME_TYPE => [
+        self::MIME_TYPE        => [
             'mime_type',
         ],
     ];
-
-    const ID3V1 = 'id3v1';
-    const ID3V2 = 'id3v2';
-
+    
+    const IMG_DATA_PATH = [
+        'comments/picture/0/data',
+    ];
+    const IMG_TYPE_PATH = [
+        'comments/picture/0/image_mime',
+    ];
+    
     private static $extensions = [
         'image/jpeg' => 'jpg',
         'image/png' => 'png',
@@ -164,14 +164,16 @@ class Meta
                 $meta[$field] = self::getFirstByPaths($raw, $paths);
             }
 
-//            if ($meta[self::PICTURE_DATA]) {
-//                if (array_key_exists($meta[self::PICTURE_TYPE], self::$extensions)) {
-//                    $meta[self::PICTURE_EXT] = self::$extensions[$meta[self::PICTURE_TYPE]];
-//                }
-//                else {
-//                    $meta[self::PICTURE_EXT] = 'jpg';
-//                }
-//            }
+            $imgData = self::getFirstByPaths($raw, self::IMG_DATA_PATH);
+            $imgType = self::getFirstByPaths($raw, self::IMG_TYPE_PATH);
+            if ($imgData) {
+                $extension = array_key_exists($imgType, self::$extensions) ? self::$extensions[$imgType] : 'jpg';
+                $meta[self::IMAGE] = [
+                    self::IMAGE_DATA => $imgData,
+                    self::IMAGE_MIME => $imgType,
+                    self::IMAGE_EXTENSION => $extension,
+                ];
+            }
             return $meta;
         }
         return null;

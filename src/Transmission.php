@@ -19,14 +19,24 @@ class Transmission
     /**
      * Save meta fields
      */
-    const FIELDS = [
-        Meta::TITLE => 'Titre',
-        Meta::ALBUM => 'Album',
-        Meta::ARTIST => 'Artiste',
-        Meta::YEAR => 'Année',
-        Meta::GENRE => 'Genre',
-        Meta::PLAYTIME => 'Durée',
+    const FIELD_LABELS = [
+        Meta::LENGTH_FORMATTED => 'Durée',
+        Meta::ARTIST           => 'Artiste',
+        Meta::ALBUM            => 'Album',
+        Meta::YEAR             => 'Année',
     ];
+    const DISPLAY_FIELDS = [
+        Meta::LENGTH_FORMATTED,
+        Meta::ARTIST,
+        Meta::ALBUM,
+        Meta::YEAR,
+    ];
+    const EDITABLE_FIELDS = [
+        Meta::ARTIST,
+        Meta::ALBUM,
+        Meta::YEAR,
+    ];
+    
     const CPT = 'jdanger_transmission';
     
     public function __construct()
@@ -79,6 +89,11 @@ class Transmission
         // play on front
         wp_register_script('transmission', plugins_url('assets/dist/player.js', __DIR__), ['mediaelement-core'], false, true);
         add_action('wp', [$this, 'lateInit']);
+        
+        // podcast
+        add_action('wp_head', function () {
+            echo '<link rel="alternate" type="application/rss+xml" title=" &raquo; Feed" href="http://transmission.jdanger.dev.rdlv/index.php/feed/" />';
+        });
     }
     
     public function lateInit()
@@ -129,90 +144,139 @@ class Transmission
         $color = isset($_POST['jdt_color']) ? $_POST['jdt_color'] : '';
         update_post_meta($post_id, 'jdt_color', $color);
         
-        $aid = isset($_POST['jdt_aid']) ? $_POST['jdt_aid'] : '';
-        if (get_post_meta($post_id, 'jdt_aid', true) !== $aid) {
+        $typeUrl = isset($_POST['jdt_type_url']) ? $_POST['jdt_type_url'] : false;
+        if ($typeUrl) {
+            $aid = null;
+            $url = isset($_POST['jdt_url']) ? $_POST['jdt_url'] : '';
+        }
+        else {
+            $aid = isset($_POST['jdt_aid']) ? $_POST['jdt_aid'] : '';
             $url = wp_get_attachment_url($aid);
-
+        }
+        
+        if (get_post_meta($post_id, 'jdt_url', true) !== $url || get_post_meta($post_id, 'jdt_type_url', true) !== $typeUrl) {
+            
+            update_post_meta($post_id, 'jdt_type_url', $typeUrl);
             update_post_meta($post_id, 'jdt_aid', $aid);
             update_post_meta($post_id, 'jdt_url', $url);
             
-//            $meta = wp_get_attachment_metadata($aid);
-            $meta = Meta::getMeta($url);
-            
-            if ($meta['title'] && !$post->title) {
-                global $wpdb;
-                $wpdb->update(
-                    $wpdb->posts,
-                    ['post_title' => $meta['title']],
-                    ['ID' => $post_id]
-                );
+            if ($typeUrl) {
+                $meta = Meta::getMeta($url);
+            }
+            else {
+                $meta = wp_get_attachment_metadata($aid);
             }
             
-            // handle duration
-            update_post_meta($post_id, 'jdt_duration', $meta[Meta::DURATION]);
+            if ($meta) {
+                if ($meta['title'] && !$post->post_title) {
+                    global $wpdb;
+                    $wpdb->update(
+                        $wpdb->posts,
+                        ['post_title' => $meta['title']],
+                        ['ID' => $post_id]
+                    );
+                }
 
-            // if picture, save it
-            $imgId = get_post_meta($aid, '_thumbnail_id', true);
-            if ($imgId) {
-                set_post_thumbnail($post_id, $imgId);
+                // handle duration
+                update_post_meta($post_id, 'jdt_duration', $meta[Meta::LENGTH]);
+
+                // handle thumbnail image
+                if ($typeUrl) {
+                    $this->handleUrlImage($post_id, $meta, $url);
+                } else {
+                    $imgId = get_post_meta($aid, '_thumbnail_id', true);
+                    if ($imgId) {
+                        set_post_thumbnail($post_id, $imgId);
+                    }
+                }
+
+                unset($meta[Meta::IMAGE]);
+
+                // handle meta
+                update_post_meta($post_id, 'jdt_meta', array_filter($meta));
             }
-            
-//            $img = $meta[Meta::PICTURE_DATA];
-//            $imgHash = sha1($img);
-//            if ($img && get_post_meta($post_id, 'jdt_img_hash', true) !== $imgHash) {
-//                $attachmentId = $this->handleImage(
-//                    $post_id,
-//                    $img,
-//                    pathinfo($url, PATHINFO_FILENAME) . '.' . $meta[Meta::PICTURE_EXT],
-//                    $meta[Meta::PICTURE_TYPE]
-//                );
-//
-//                if ($attachmentId && !is_wp_error($attachmentId)) {
-//                    set_post_thumbnail($post_id, $attachmentId);
-//
-//                    // save picture hash for later comparison
-//                    $path = get_attached_file($attachmentId);
-//                    update_post_meta($post_id, 'jdt_img_hash', sha1(file_get_contents($path)));
-//                }
-//            }
-            
-            unset($meta[Meta::PICTURE_DATA]);
-            unset($meta[Meta::PICTURE_EXT]);
-            unset($meta[Meta::PICTURE_TYPE]);
-
-            // handle meta
-            update_post_meta($post_id, 'jdt_meta', array_filter($meta));
+            else {
+                error_log(sprintf('Can not get metadata from url %s. Duration set to 0.', $url));
+                update_post_meta($post_id, 'jdt_duration', 0);
+            }
+        }
+        else {
+            $postedMeta = isset($_POST['jdt_meta']) ? $_POST['jdt_meta'] : [];
+            if ($postedMeta) {
+                $meta = get_post_meta($post_id, 'jdt_meta', true);
+                foreach ($postedMeta as $key => $value) {
+                    if (in_array($key, self::EDITABLE_FIELDS) && $value) {
+                        $meta[$key] = $value;
+                    }
+                }
+                update_post_meta($post_id, 'jdt_meta', $meta);
+            }
         }
     }
     
-    public function handleImage($post_id, $img_data, $filename, $type)
+    /**
+     * @param $post_id
+     * @param $meta
+     * @param $url
+     */
+    private function handleUrlImage($post_id, $meta, $url)
     {
+        $image = $meta[Meta::IMAGE];
+        if (!$image) {
+            return;
+        }
+        
+        $imgData = $image[Meta::IMAGE_DATA];
+        if (!$imgData) {
+            return;
+        }
+        
+        $imgHash = sha1($imgData);
+        
+        // img same as previous one
+        if (get_post_meta($post_id, 'jdt_img_hash', true) === $imgHash) {
+            return;
+        }
+        
+        $filename = pathinfo($url, PATHINFO_FILENAME) . '.' . $meta[Meta::IMAGE_EXTENSION];
         $path = wp_upload_dir()['path'] .'/'. $filename;
         
+        // increment filename in case it already exists
         $inc = 1;
         while (file_exists($path)) {
             $path = preg_replace('/(.*?)(_[0-9]+)?(\.[^.]+)$/', '\1_1\3', $path);
             ++$inc;
         }
         
-        if (file_put_contents($path, $img_data)) {
+        // save file contents
+        if (file_put_contents($path, $imgData)) {
 
-            $id = wp_insert_attachment([
+            // create attachment
+            $attachmentId = wp_insert_attachment([
                 'post_title'     => $filename,
                 'post_content'   => '',
                 'post_status'    => 'publish',
-                'post_mime_type' => $type
+                'post_mime_type' => $meta[Meta::IMAGE_MIME]
             ], $path, $post_id);
 
-            if (is_wp_error($id)) {
+            if (is_wp_error($attachmentId)) {
                 unlink($path);
+                error_log(sprintf(
+                    'Failed insert attachment for post %s at path %s: %s',
+                    $post_id,
+                    $path,
+                    $attachmentId->get_error_message()
+                ));
             }
+            else {
+                set_post_thumbnail($post_id, $attachmentId);
 
-            return $id;
+                // save picture hash for later comparison
+                update_post_meta($post_id, 'jdt_img_hash', $imgHash);
+            }
         }
-        return null;
     }
-
+    
     public function addMetaboxes()
     {
         add_action('add_meta_boxes_' . self::CPT, [$this, 'addMetabox']);
@@ -246,12 +310,12 @@ class Transmission
                 p.ID AS id,
                 p.post_title AS title,
                 p.post_date AS date,
-                pm.meta_value AS duration,
+                pm.meta_value AS length,
                 pm1.meta_value AS url,
                 pm2.meta_value AS color,
                 pm3.meta_value AS meta
             FROM $wpdb->posts p
-            LEFT JOIN $wpdb->postmeta pm ON pm.post_id = p.ID AND pm.meta_key = 'jdt_duration'
+            LEFT JOIN $wpdb->postmeta pm ON pm.post_id = p.ID AND pm.meta_key = 'jdt_length'
             LEFT JOIN $wpdb->postmeta pm1 ON pm1.post_id = p.ID AND pm1.meta_key = 'jdt_url'
             LEFT JOIN $wpdb->postmeta pm2 ON pm2.post_id = p.ID AND pm2.meta_key = 'jdt_color'
             LEFT JOIN $wpdb->postmeta pm3 ON pm3.post_id = p.ID AND pm3.meta_key = 'jdt_meta'
@@ -263,10 +327,10 @@ class Transmission
         $dateFormat = 'Y-m-d H:i:s';
         foreach ($results as &$result) {
             $result->date = DateTime::createFromFormat($dateFormat, $result->date);
-            $result->duration = (int)$result->duration;
+            $result->length = (int)$result->length;
             $result->meta = unserialize($result->meta);
-            $result->playtime = $result->meta['playtime'];
-            unset($result->meta['playtime']);
+            $result->length_formatted = $result->meta['length_formatted'];
+            unset($result->meta['length_formatted']);
             $session[] = $result;
         }
         

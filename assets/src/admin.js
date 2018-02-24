@@ -1,6 +1,6 @@
 (function IIFE() {
     
-    var aidInput = document.querySelector('input[name="jdt_aid"]');
+    var aidInput = document.querySelector('[name="jdt_aid"]');
     var aidLabel = document.querySelector('.JdtForm-selection');
     
     document.getElementById('jdt-audio-file').addEventListener('click', function () {
@@ -17,15 +17,24 @@
         
         window.on('select', function () {
             var attachment = window.state().get('selection').first();
-            console.log('aidInput', aidInput);
-            console.log('aidLabel', aidLabel);
             aidInput.value = attachment.id;
-            console.log(attachment);
-            var filename = attachment.attributes.url.replace(/^.*?([^\/]+)$/, '$1');
-            aidLabel.innerText = filename;
+            aidLabel.innerText = attachment.attributes.url.replace(/^.*?([^\/]+)$/, '$1');
         });
         
         window.open();
+    });
+    
+    var aidFileRow = document.querySelector('.JdtForm-row.file');
+    var aidUrlRow = document.querySelector('.JdtForm-row.url');
+    document.querySelector('[name="jdt_type_url"]').addEventListener('change', function (e) {
+        if (e.target.checked) {
+            aidFileRow.setAttribute('hidden', '');
+            aidUrlRow.removeAttribute('hidden');
+        }
+        else {
+            aidFileRow.removeAttribute('hidden');
+            aidUrlRow.setAttribute('hidden', '');
+        }
     });
     
 })();

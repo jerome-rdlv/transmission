@@ -56,12 +56,12 @@ $dayInterval = new DateInterval(sprintf($interval, 1));
                 ?>
                 <?php while ($time < $tomorrow): ?>
                     <?php
-                    $duration = $session->duration;
+                    $length = $session->length;
                     $timeLeft = $tomorrow->format('U') - $time->format('U');
-                    if ($duration > $timeLeft) {
-                        $duration = $timeLeft;
+                    if ($length > $timeLeft) {
+                        $length = $timeLeft;
                     }
-                    $height = $duration / 3600 * 100 / 24;
+                    $height = $length / 3600 * 100 / 24;
                     ?>
                     <div class="JdtProg-item" style="height: <?php echo $height ?>%;" data-id="<?php echo $session->id ?>">
                         <?php if ($height > 4 && $session->id !== Flow::PLACEHOLDER_ID && !$session->offset): ?>
