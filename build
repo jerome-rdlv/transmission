@@ -18,7 +18,7 @@ fi
 current_version=`grep -P "Version: .*$" transmission.php | awk '{ print $2 }'`
 sed -Ei "s|(Version: ).*$|\1$display_version|" ./transmission.php
 
-dest="builds/transmission-$package_version.tar"
+dest="builds/transmission-$package_version.zip"
 rm -f $dest*
 
 composer install --no-ansi --no-dev --no-interaction --optimize-autoloader
@@ -27,7 +27,7 @@ composer install --no-ansi --no-dev --no-interaction --optimize-autoloader
 yarn install --production=false
 node_modules/gulp/bin/gulp.js --env=prod
 
-# not needed, no js dependencies for production
+# not needed since no js dependencies for production
 # so simply exclude node_modules from tar archive
 #yarn install --production=true
 
@@ -35,23 +35,22 @@ if [ ! -d "builds" ]; then
     mkdir "builds"
 fi
 
-tar -c \
-    --exclude=.gitignore \
-    --exclude=.rsync-exclude \
-    --exclude=assets/src \
-    --exclude=build \
-    --exclude=builds \
-    --exclude=composer.json \
-    --exclude=composer.lock \
-    --exclude=gulpfile.js \
-    --exclude=node_modules \
-    --exclude=package.json \
-    --exclude=yarn.lock \
-    -f $dest \
-    -C . \
-    *
-
-gzip -9 $dest
+zip \
+    -x \
+        .git/\* \
+        .gitignore \
+        .rsync-exclude \
+        assets/src/\* \
+        build \
+        builds/\* \
+        composer.json \
+        composer.lock \
+        gulpfile.js \
+        node_modules/\* \
+        package.json \
+        yarn.lock \
+    -r $dest \
+    .
 
 # restore current version in transmission.php
 sed -Ei "s|(Version: ).*$|\1$current_version|" ./transmission.php
