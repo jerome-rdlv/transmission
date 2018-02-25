@@ -3,7 +3,7 @@
 Plugin Name: Transmission
 Plugin URI: http://transmission.cymru/
 Description: Continuous play of radio broadcast for Transmission project
-Version: 0.1
+Version: develop
 Author: Jérôme Mulsant
 Author URI: https://rue-de-la-vieille.fr
 License: GPL3

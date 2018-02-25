@@ -1,0 +1,50 @@
+#!/bin/bash
+
+cd `dirname $0`
+
+branch=`git symbolic-ref HEAD | sed -e 's,.*/\(.*\),\1,'`
+tag=`git describe --tags --abbrev=0 2> /dev/null`
+hash=`git rev-parse --short HEAD`
+
+if [ -n "$tag" ]; then
+    package_version=$tag
+    display_version=$tag
+else
+    package_version=$hash
+    display_version=$hash
+fi
+
+dest="builds/transmission-$package_version.tar"
+rm -f $dest*
+
+composer install --no-ansi --no-dev --no-interaction --optimize-autoloader
+
+# build assets
+yarn install --production=false
+node_modules/gulp/bin/gulp.js --env=prod
+
+# not needed, no js dependencies for production
+# so simply exclude node_modules from tar archive
+#yarn install --production=true
+
+if [ ! -d "builds" ]; then
+    mkdir "builds"
+fi
+
+tar -c \
+    --exclude=.gitignore \
+    --exclude=.rsync-exclude \
+    --exclude=assets/src \
+    --exclude=build \
+    --exclude=builds \
+    --exclude=composer.json \
+    --exclude=composer.lock \
+    --exclude=gulpfile.js \
+    --exclude=node_modules \
+    --exclude=package.json \
+    --exclude=yarn.lock \
+    -f $dest \
+    -C . \
+    *
+
+gzip -9 $dest

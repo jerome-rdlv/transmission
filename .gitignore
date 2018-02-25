@@ -1,3 +1,4 @@
-/vendor
-/node_modules
+/builds
 /assets/dist
+/node_modules
+/vendor
