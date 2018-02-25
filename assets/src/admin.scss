@@ -1,6 +1,16 @@
 $c-green: #73d216;
 $c-red: #cc0000;
 
+@mixin visually-hidden {
+    clip: rect(1px, 1px, 1px, 1px);
+    height: 1px;
+    left: -9999em;
+    margin: 0;
+    overflow: hidden;
+    position: absolute;
+    width: 1px;
+}
+
 .JdtForm {
     &-row {
         margin: 15px 0;
@@ -91,7 +101,7 @@ $c-red: #cc0000;
         position: absolute;
         left: -20px;
         width: 26px;
-        z-index: 1;
+        z-index: 2;
         
         svg {
             display: block;
@@ -101,52 +111,11 @@ $c-red: #cc0000;
         }
     }
     
-    &-days {
-        align-items: stretch;
-        display: flex;
-        flex-flow: row nowrap;
-        min-height: 55em;
-        margin-top: $titleHeight;
-        margin-left: 3em;
-        max-width: 100em;
-        padding-left: 10px;
-        position: relative;
-
-        &:before {
-            border-bottom: 1px solid #ccc;
-            content: '';
-            display: block;
-            left: 0;
-            position: absolute;
-            width: 100%;
-        }
-    }
     
     &-hour {
-        display: block;
-        left: 0;
-        position: absolute;
-        text-align: right;
-        width: 100%;
-        
-        &:before {
-            border-top: 1px solid transparentize(black, .9);
-            content: '';
-            display: block;
-            width: 100%
-        }
-        
-        &-inner {
-            color: #666;
-            display: block;
-            left: -5em;
-            font-size: 10px;
-            transform: translateY(-50%);
-            position: relative;
-            width: 4em;
-        }
+        display: none;
     }
-
+    
     &-day {
         position: relative;
         flex-grow: 1;
@@ -164,11 +133,8 @@ $c-red: #cc0000;
         line-height: 1;
         margin: 0;
         padding-bottom: 1em;
-        padding-left: 10px;
-        position: absolute;
         text-align: left;
         text-transform: uppercase;
-        transform: translateY(-100%);
         width: 100%;
         
         &-day {
@@ -182,13 +148,16 @@ $c-red: #cc0000;
 
     &-item {
         position: relative;
+        
+        &.current {
+            font-weight: bold;
+            z-index: 1;
+        }
     }
     &-info {
         box-sizing: border-box;
         font-size: 12px;
         left: 0;
-        padding-left: 10px;
-        position: absolute;
         text-align: left;
         width: 100%;
         z-index: 1;
@@ -207,17 +176,122 @@ $c-red: #cc0000;
         }
         
         &-playtime {
-            display: block;
             font-size: 10px;
         }
     }
     
     &-session {
-        height: 100%;
-        max-width: 6em;
         position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
+    }
+    
+    @media (max-width: (782px)) {
+        &-days {
+            align-items: flex-start;
+            display: flex;
+            flex-flow: row wrap;
+            justify-content: flex-start;
+            margin: 0 -20px;
+        }
+        &-marker {
+            display: none;
+        }
+        &-day {
+            margin: 20px;
+            width: auto !important;
+        }
+        &-item {
+            height: auto !important;
+            padding-left: 5px;
+            padding-top: .5em;
+        }
+        &-info {
+            &-playtime {
+                &:after {
+                    content: ' - ';
+                }
+            }
+        }
+        &-session {
+            height: 100%;
+            left: 0;
+            top: 0;
+            width: 5px;
+        }
+    }
+    
+    @media (min-width: (783px)) {
+        &-days {
+            align-items: stretch;
+            display: flex;
+            flex-flow: row nowrap;
+            min-height: 55em;
+            margin-top: $titleHeight;
+            margin-left: 3em;
+            max-width: 100em;
+            padding-left: 10px;
+            position: relative;
+
+            &:before {
+                border-bottom: 1px solid #ccc;
+                content: '';
+                display: block;
+                left: 0;
+                position: absolute;
+                width: 100%;
+            }
+            
+        }
+
+        &-hour {
+            display: block;
+            left: 0;
+            position: absolute;
+            text-align: right;
+            width: 100%;
+
+            &:before {
+                border-top: 1px solid transparentize(black, .9);
+                content: '';
+                display: block;
+                width: 100%
+            }
+
+            &-inner {
+                color: #666;
+                display: block;
+                left: -5em;
+                font-size: 10px;
+                transform: translateY(-50%);
+                position: relative;
+                width: 4em;
+            }
+        }
+        
+        &-title {
+            padding-left: 10px;
+            position: absolute;
+            transform: translateY(-100%);
+        }
+        
+        &-info {
+            padding-left: 10px;
+            position: absolute;
+            
+            &.wide-hidden {
+                @include visually-hidden();
+            }
+
+            &-playtime {
+                display: block;
+            }
+        }
+
+        &-session {
+            height: 100%;
+            max-width: 6em;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
     }
 }

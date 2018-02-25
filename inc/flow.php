@@ -2,7 +2,7 @@
 use Rdlv\JDanger\Flow;
 use Rdlv\JDanger\Transmission;
 
-$current = new DateTime();
+$current = (int)date('U');
 $date = DateTime::createFromFormat('Y-m-d', isset($_GET['date']) ? $_GET['date'] : date('Y-m-d'));
 $ts = $date->format('U');
 $ts -= date('w', $ts) == 0 ? 3600 * 24 * 7 : 0;
@@ -81,8 +81,8 @@ $dayInterval = new DateInterval(sprintf($interval, 1));
                             <?php echo $time->format('j/m/Y') ?>
                         </span>
                     </h2>
-                    <?php if ($current > $time && $current < $tomorrow): ?>
-                        <div class="JdtProg-marker" style="top: <?php echo (($current->format('U') - $time->format('U')) * 100 / 3600 / 24) ?>%;">
+                    <?php if ($current > $time->format('U') && $current < $tomorrow->format('U')): ?>
+                        <div class="JdtProg-marker" style="top: <?php echo (($current - $time->format('U')) * 100 / 3600 / 24) ?>%;">
                             <?php include __DIR__ .'/marker.svg' ?>
                         </div>
                     <?php endif ?>
@@ -94,10 +94,12 @@ $dayInterval = new DateInterval(sprintf($interval, 1));
                             $length = $timeLeft;
                         }
                         $height = $length / 3600 * 100 / 24;
+                        $isCurrent = $current > $time->format('U') && $current < ((int)$time->format('U') + $length);
                         ?>
-                        <div class="JdtProg-item" style="height: <?php echo $height ?>%;" data-id="<?php echo $session->id ?>">
-                            <?php if ($height > 4 && $session->id !== Flow::PLACEHOLDER_ID && !$session->offset): ?>
-                                <span class="JdtProg-info" style="border-color:<?php echo $session->color ?>">
+                        <div class="JdtProg-item<?php if ($isCurrent) echo ' current' ?>" style="height: <?php echo $height ?>%;" data-id="<?php echo $session->id ?>">
+                            <?php if ($session->id !== Flow::PLACEHOLDER_ID): ?>
+                                <span class="JdtProg-info<?php if ($height < 4  || $session->offset) echo ' wide-hidden' ?>" 
+                                      style="border-color:<?php echo $session->color ?>">
                                     <span class="JdtProg-info-inner">
                                         <span class="JdtProg-info-playtime"><?php echo $time->format('H:i') ?></span>
                                         <?php echo $session->title ?><?php if ($session->offset) echo ' (suite)' ?>
