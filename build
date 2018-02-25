@@ -14,6 +14,10 @@ else
     display_version=$hash
 fi
 
+# update version in plugin manifest
+current_version=`grep -P "Version: .*$" transmission.php | awk '{ print $2 }'`
+sed -Ei "s|(Version: ).*$|\1$display_version|" ./transmission.php
+
 dest="builds/transmission-$package_version.tar"
 rm -f $dest*
 
@@ -48,3 +52,6 @@ tar -c \
     *
 
 gzip -9 $dest
+
+# restore current version in transmission.php
+sed -Ei "s|(Version: ).*$|\1$current_version|" ./transmission.php
