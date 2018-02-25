@@ -52,4 +52,4 @@ gulp.task('js-watch', function () {
 
 // defaults
 gulp.task('default', gulp.parallel('sass', 'js'));
-gulp.task('watch', gulp.parallel('sass-watch', 'js-watch'));
+gulp.task('watch', gulp.parallel('default', 'sass-watch', 'js-watch'));

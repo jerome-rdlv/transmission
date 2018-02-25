@@ -35,6 +35,36 @@
     $root: &;
     
     $titleHeight: 5em;
+
+    .wp-heading-inline {
+        margin-right: 1em !important;
+    }
+    &-actions {
+        display: inline-block;
+    }
+    &-playing-status {
+        font-size: 12px;
+        margin-left: .5em;
+        position: relative;
+        top: -.25em;
+        
+        &::before {
+            font-size: .8em;
+            border-radius: 1em;
+            content: '';
+            display: inline-block;
+            height: 1em;
+            margin: 0 .4em;
+            width: 1em;
+        }
+        
+        &.on::before {
+            background: green;
+        }
+        &.off::before {
+            background: red;
+        }
+    }
     
     &-days {
         align-items: stretch;

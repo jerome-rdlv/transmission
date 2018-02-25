@@ -2,6 +2,13 @@
 use Rdlv\JDanger\Flow;
 use Rdlv\JDanger\Transmission;
 
+if (isset($_POST['play_toggle'])) {
+    if (isset($_POST['jdt_play_toggle_nonce']) && wp_verify_nonce($_POST['jdt_play_toggle_nonce'], basename(__FILE__))) {
+        update_option('jdt_playing', !get_option('jdt_playing'));
+    }
+}
+
+
 $date = DateTime::createFromFormat('Y-m-d', isset($_GET['date']) ? $_GET['date'] : '');
 $ts = $date ? $date->format('U') : time();
 $ts -= date('w', $ts) == 0 ? 3600 * 24 * 7 : 0;
@@ -23,7 +30,21 @@ $dayInterval = new DateInterval(sprintf($interval, 1));
 
 ?>
 <div class="wrap JdtProg">
-    <h1>Programme</h1>
+    <h1 class="wp-heading-inline">Programme</h1>
+    
+    <div class="JdtProg-actions">
+        <?php $playing = get_option('jdt_playing') ?>
+        <form method="POST">
+            <?php wp_nonce_field(basename(__FILE__), 'jdt_play_toggle_nonce') ?>
+            <button type="submit" class="page-title-action" name="play_toggle">
+                <?php echo $playing ? 'Stop' : 'Lecture' ?> 
+            </button>
+            <span class="JdtProg-playing-status <?php echo $playing ? 'on' : 'off' ?>">
+                <?php echo $playing ? 'En diffusion' : 'Muet' ?>
+            </span>
+        </form>
+    </div>
+    
     <?php if ($flow->getSessions()): ?>
         <div class="JdtProg-days">
             <div class="JdtProg-hours">

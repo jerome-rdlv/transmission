@@ -113,7 +113,7 @@ class Transmission
 
     public function lateInit()
     {
-        if (is_front_page()) {
+        if (is_front_page() && get_option('jdt_playing')) {
             $time = new DateTime();
             // use this to offset play time
 //            $time->sub(new \DateInterval('PT11M'));
