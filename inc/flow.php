@@ -2,6 +2,7 @@
 use Rdlv\JDanger\Flow;
 use Rdlv\JDanger\Transmission;
 
+$current = new DateTime();
 $date = DateTime::createFromFormat('Y-m-d', isset($_GET['date']) ? $_GET['date'] : date('Y-m-d'));
 $ts = $date->format('U');
 $ts -= date('w', $ts) == 0 ? 3600 * 24 * 7 : 0;
@@ -65,6 +66,13 @@ $dayInterval = new DateInterval(sprintf($interval, 1));
             <?php while ($time < $end): ?>
                 <div class="JdtProg-day day-<?php echo $time->format('Y-m-d') ?>" 
                      style="width:<?php echo (100 / $days) ?>%;">
+                    <?php
+                    $flow->setTime($tomorrow);
+                    $tomorrow->add($dayInterval);
+                    
+                    $session = $flow->next();
+                    $time = $flow->getTime();
+                    ?>
                     <h2 class="JdtProg-title">
                         <span class="JdtProg-title-day">
                             <?php echo $time->format('l') ?>
@@ -73,40 +81,38 @@ $dayInterval = new DateInterval(sprintf($interval, 1));
                             <?php echo $time->format('j/m/Y') ?>
                         </span>
                     </h2>
-                <?php
-                $flow->setTime($tomorrow);
-                $tomorrow->add($dayInterval);
-                
-                $session = $flow->next();
-                $time = $flow->getTime();
-                ?>
-                <?php while ($time < $tomorrow): ?>
-                    <?php
-                    $length = $session->length;
-                    $timeLeft = $tomorrow->format('U') - $time->format('U');
-                    if ($length > $timeLeft) {
-                        $length = $timeLeft;
-                    }
-                    $height = $length / 3600 * 100 / 24;
-                    ?>
-                    <div class="JdtProg-item" style="height: <?php echo $height ?>%;" data-id="<?php echo $session->id ?>">
-                        <?php if ($height > 4 && $session->id !== Flow::PLACEHOLDER_ID && !$session->offset): ?>
-                            <span class="JdtProg-info" style="border-color:<?php echo $session->color ?>">
-                                <span class="JdtProg-info-inner">
-                                    <span class="JdtProg-info-playtime"><?php echo $time->format('H:i') ?></span>
-                                    <?php echo $session->title ?><?php if ($session->offset) echo ' (suite)' ?>
+                    <?php if ($current > $time && $current < $tomorrow): ?>
+                        <div class="JdtProg-marker" style="top: <?php echo (($current->format('U') - $time->format('U')) * 100 / 3600 / 24) ?>%;">
+                            <?php include __DIR__ .'/marker.svg' ?>
+                        </div>
+                    <?php endif ?>
+                    <?php while ($time < $tomorrow): ?>
+                        <?php
+                        $length = $session->length;
+                        $timeLeft = $tomorrow->format('U') - $time->format('U');
+                        if ($length > $timeLeft) {
+                            $length = $timeLeft;
+                        }
+                        $height = $length / 3600 * 100 / 24;
+                        ?>
+                        <div class="JdtProg-item" style="height: <?php echo $height ?>%;" data-id="<?php echo $session->id ?>">
+                            <?php if ($height > 4 && $session->id !== Flow::PLACEHOLDER_ID && !$session->offset): ?>
+                                <span class="JdtProg-info" style="border-color:<?php echo $session->color ?>">
+                                    <span class="JdtProg-info-inner">
+                                        <span class="JdtProg-info-playtime"><?php echo $time->format('H:i') ?></span>
+                                        <?php echo $session->title ?><?php if ($session->offset) echo ' (suite)' ?>
+                                    </span>
                                 </span>
-                            </span>
-                        <?php endif ?>
-                        <div class="JdtProg-session"
-                             <?php if ($session->id !== Flow::PLACEHOLDER_ID): ?>
-                             title="<?php echo $time->format('H:i') .' / '. $session->title . ($session->offset ? ' (suite)' : '') ?>"
-                             <?php endif ?>
-                             style="background:<?php echo $session->color ?>;"></div>
-                    </div>
-                    <?php $session = $flow->next() ?>
-                    <?php $time = $flow->getTime() ?>
-                <?php endwhile ?>
+                            <?php endif ?>
+                            <div class="JdtProg-session"
+                                 <?php if ($session->id !== Flow::PLACEHOLDER_ID): ?>
+                                 title="<?php echo $time->format('H:i') .' / '. $session->title . ($session->offset ? ' (suite)' : '') ?>"
+                                 <?php endif ?>
+                                 style="background:<?php echo $session->color ?>;"></div>
+                        </div>
+                        <?php $session = $flow->next() ?>
+                        <?php $time = $flow->getTime() ?>
+                    <?php endwhile ?>
                 </div>
             <?php endwhile ?>
         </div>

@@ -1,3 +1,6 @@
+$c-green: #73d216;
+$c-red: #cc0000;
+
 .JdtForm {
     &-row {
         margin: 15px 0;
@@ -61,8 +64,6 @@
     }
     &-playing-status {
         margin-left: .5em;
-        //position: relative;
-        //top: -.25em;
         
         &::before {
             font-size: .8em;
@@ -75,10 +76,28 @@
         }
         
         &.on::before {
-            background: green;
+            background: $c-green;
         }
         &.off::before {
-            background: red;
+            background: $c-red;
+        }
+    }
+    
+    &-marker {
+        filter: drop-shadow(1px 2px 2px rgba(0, 0, 0, .5));
+        color: $c-red;
+        display: block;
+        height: 20px;
+        position: absolute;
+        left: -20px;
+        width: 26px;
+        z-index: 1;
+        
+        svg {
+            display: block;
+            height: 100%;
+            width: 100%;
+            transform: translateY(-50%);
         }
     }
     
