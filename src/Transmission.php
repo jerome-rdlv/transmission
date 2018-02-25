@@ -191,8 +191,8 @@ class Transmission
                     );
                 }
 
-                // handle duration
-                update_post_meta($post_id, 'jdt_duration', $meta[Meta::LENGTH]);
+                // handle length
+                update_post_meta($post_id, 'jdt_length', $meta[Meta::LENGTH]);
 
                 // handle thumbnail image
                 if ($typeUrl) {
@@ -210,8 +210,8 @@ class Transmission
                 update_post_meta($post_id, 'jdt_meta', array_filter($meta));
             }
             else {
-                error_log(sprintf('Can not get metadata from url %s. Duration set to 0.', $url));
-                update_post_meta($post_id, 'jdt_duration', 0);
+                error_log(sprintf('Can not get metadata from url %s. Length set to 0.', $url));
+                update_post_meta($post_id, 'jdt_length', 0);
             }
         }
         else {

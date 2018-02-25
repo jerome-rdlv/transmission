@@ -1,6 +1,7 @@
 #!/bin/bash
 
 cd `dirname $0`
+name=`basename $(pwd)`
 
 branch=`git symbolic-ref HEAD | sed -e 's,.*/\(.*\),\1,'`
 tag=`git describe --tags --abbrev=0 2> /dev/null`
@@ -18,7 +19,7 @@ fi
 current_version=`grep -P "Version: .*$" transmission.php | awk '{ print $2 }'`
 sed -Ei "s|(Version: ).*$|\1$display_version|" ./transmission.php
 
-dest="builds/transmission-$package_version.zip"
+dest="builds/$name-$package_version.zip"
 rm -f $dest*
 
 composer install --no-ansi --no-dev --no-interaction --optimize-autoloader
@@ -35,22 +36,25 @@ if [ ! -d "builds" ]; then
     mkdir "builds"
 fi
 
+cd ..
 zip \
     -x \
-        .git/\* \
-        .gitignore \
-        .rsync-exclude \
-        assets/src/\* \
-        build \
-        builds/\* \
-        composer.json \
-        composer.lock \
-        gulpfile.js \
-        node_modules/\* \
-        package.json \
-        yarn.lock \
-    -r $dest \
-    .
+        $name/.git/\* \
+        $name/.gitignore \
+        $name/.rsync-exclude \
+        $name/assets/src/\* \
+        $name/build \
+        $name/builds/\* \
+        $name/composer.json \
+        $name/composer.lock \
+        $name/gulpfile.js \
+        $name/node_modules/\* \
+        $name/package.json \
+        $name/yarn.lock \
+    -r $name/$dest \
+    ./$name
+
+cd $name
 
 # restore current version in transmission.php
 sed -Ei "s|(Version: ).*$|\1$current_version|" ./transmission.php
