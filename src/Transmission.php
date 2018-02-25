@@ -4,6 +4,7 @@ namespace Rdlv\JDanger;
 
 use DateTime;
 use WP_Query;
+use WP_Screen;
 
 class Transmission
 {
@@ -75,6 +76,7 @@ class Transmission
         // admin
         wp_register_style('jdt-admin', plugins_url('assets/dist/admin.css', __DIR__));
         wp_register_script('jdt-admin', plugins_url('assets/dist/admin.js', __DIR__), [], false, true);
+        add_action('current_screen', [$this, 'flowPage']);
 
         add_action('admin_enqueue_scripts', [$this, 'enqueueScripts']);
         add_action('admin_menu', function () {
@@ -360,5 +362,33 @@ class Transmission
         echo '<?xml version="1.0" encoding="'. get_option('blog_charset') .'"?>'."\n";
         include __DIR__ .'/../inc/rss.xml.php';
         exit;
+    }
+    
+    public function flowPage(WP_Screen $screen)
+    {
+        if ($screen->id !== self::CPT .'_page_jdt_flow') {
+            return;
+        }
+
+        if (isset($_POST['play_toggle'])) {
+            if (isset($_POST['_wpnonce']) && wp_verify_nonce($_POST['_wpnonce'], 'jdt_play_toggle_nonce')) {
+                update_option('jdt_playing', !get_option('jdt_playing'));
+                wp_redirect($_SERVER['REQUEST_URI']);
+                exit;
+            }
+        }
+
+        if (isset($_GET['today'])) {
+            $params = [];
+            foreach (explode('&', $_SERVER['QUERY_STRING']) as $pair) {
+                list($key, $value) = explode('=', $pair);
+                if (!in_array($key, ['date', 'today'])) {
+                    $params[$key] = $value;
+                }
+            }
+            $url = $_SERVER['PHP_SELF'] .'?'. build_query($params);
+            wp_redirect($url);
+            exit;
+        }
     }
 }

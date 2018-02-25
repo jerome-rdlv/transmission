@@ -2,15 +2,8 @@
 use Rdlv\JDanger\Flow;
 use Rdlv\JDanger\Transmission;
 
-if (isset($_POST['play_toggle'])) {
-    if (isset($_POST['jdt_play_toggle_nonce']) && wp_verify_nonce($_POST['jdt_play_toggle_nonce'], basename(__FILE__))) {
-        update_option('jdt_playing', !get_option('jdt_playing'));
-    }
-}
-
-
-$date = DateTime::createFromFormat('Y-m-d', isset($_GET['date']) ? $_GET['date'] : '');
-$ts = $date ? $date->format('U') : time();
+$date = DateTime::createFromFormat('Y-m-d', isset($_GET['date']) ? $_GET['date'] : date('Y-m-d'));
+$ts = $date->format('U');
 $ts -= date('w', $ts) == 0 ? 3600 * 24 * 7 : 0;
 $time = DateTime::createFromFormat(
     'Y-m-d H:i:s',
@@ -34,8 +27,20 @@ $dayInterval = new DateInterval(sprintf($interval, 1));
     
     <div class="JdtProg-actions">
         <?php $playing = get_option('jdt_playing') ?>
-        <form method="POST">
-            <?php wp_nonce_field(basename(__FILE__), 'jdt_play_toggle_nonce') ?>
+        <form method="GET" action="<?php echo $_SERVER['REQUEST_URI'] ?>">
+            <label for="jdt_prog_date">Du</label>
+            <input type="hidden" name="post_type" value="<?php echo isset($_GET['post_type']) ? $_GET['post_type'] : '' ?>">
+            <input type="hidden" name="page" value="<?php echo isset($_GET['page']) ? $_GET['page'] : '' ?>">
+            <input name="date" id="jdt_prog_date" type="date" value="<?php echo $date->format('Y-m-d') ?>">
+            <button type="submit" class="page-title-action">
+                Voir
+            </button>
+            <button type="submit" class="page-title-action" name="today">
+                Aujourd’hui
+            </button>
+        </form>
+        <form method="POST" action="<?php echo $_SERVER['REQUEST_URI'] ?>">
+            <?php wp_nonce_field('jdt_play_toggle_nonce') ?>
             <button type="submit" class="page-title-action" name="play_toggle">
                 <?php echo $playing ? 'Stop' : 'Lecture' ?> 
             </button>
