@@ -119,8 +119,11 @@ class Transmission
             $time = new DateTime();
             // use this to offset play time
 //            $time->sub(new \DateInterval('PT11M'));
-            wp_localize_script('transmission', 'jdanger_transmission', $this->getFlow($time)->toArray());
-            wp_enqueue_script('transmission');
+            $flow = $this->getFlow($time);
+            if ($flow->hasSessions()) {
+                wp_localize_script('transmission', 'jdanger_transmission', $flow->toArray());
+                wp_enqueue_script('transmission');
+            }
         }
     }
     
@@ -336,8 +339,9 @@ class Transmission
         
         // post-treatment
         $dateFormat = 'Y-m-d H:i:s';
+        $tz = (new DateTime())->getTimezone();
         foreach ($results as &$result) {
-            $result->date = DateTime::createFromFormat($dateFormat, $result->date);
+            $result->date = DateTime::createFromFormat($dateFormat, $result->date, $tz);
             $result->length = (int)$result->length;
             $result->meta = unserialize($result->meta);
             $result->length_formatted = $result->meta['length_formatted'];

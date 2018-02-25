@@ -2,16 +2,18 @@
 use Rdlv\JDanger\Flow;
 use Rdlv\JDanger\Transmission;
 
+$flow = Transmission::getInstance()->getFlow();
+
 $current = (int)date('U');
 $date = DateTime::createFromFormat('Y-m-d', isset($_GET['date']) ? $_GET['date'] : date('Y-m-d'));
+$date->setTimezone($flow->getTimezone());
 $ts = $date->format('U');
 $ts -= date('w', $ts) == 0 ? 3600 * 24 * 7 : 0;
 $time = DateTime::createFromFormat(
     'Y-m-d H:i:s',
     date('Y-m-d', strtotime('-' . (date('w', $ts) - 1) . ' days', $ts)) . ' 00:00:00'
 );
-
-$flow = Transmission::getInstance()->getFlow();
+$time->setTimezone($flow->getTimezone());
 
 $interval = 'P%dD';
 $days = 7;
@@ -27,7 +29,7 @@ $dayInterval = new DateInterval(sprintf($interval, 1));
     <h1 class="wp-heading-inline">Programme</h1>
     
     <div class="JdtProg-actions">
-        <?php $playing = get_option('jdt_playing') ?>
+        <?php $playing = get_option('jdt_playing') && $flow->hasSessions() ?>
         <form method="GET" action="<?php echo $_SERVER['REQUEST_URI'] ?>">
             <label for="jdt_prog_date">Du</label>
             <input type="hidden" name="post_type" value="<?php echo isset($_GET['post_type']) ? $_GET['post_type'] : '' ?>">
@@ -108,12 +110,15 @@ $dayInterval = new DateInterval(sprintf($interval, 1));
                             <?php endif ?>
                             <div class="JdtProg-session"
                                  <?php if ($session->id !== Flow::PLACEHOLDER_ID): ?>
-                                 title="<?php echo $time->format('H:i') .' / '. $session->title . ($session->offset ? ' (suite)' : '') ?>"
+                                    title="<?php echo $time->format('H:i') .' / '. $session->title . ($session->offset ? ' (suite)' : '') ?>"
+                                 <?php else: ?>
+                                     <?php $first = $flow->getFirstPublishedSession() ?>
+                                    title="Aucune transmission (première transmission le <?php echo $first->date->format('d/m/Y') ?>)"
                                  <?php endif ?>
                                  style="background:<?php echo $session->color ?>;"></div>
                         </div>
                         <?php $session = $flow->next() ?>
-                        <?php $time = $flow->getTime() ?>
+                        <?php $time = min($flow->getTime(), $tomorrow) ?>
                     <?php endwhile ?>
                 </div>
             <?php endwhile ?>

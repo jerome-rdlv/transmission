@@ -11,7 +11,7 @@ class Flow
     const PLACEHOLDER_ID = 'placeholder';
     
     /** @var array */
-    private $sessions;
+    private $sessions = null;
 
     /** @var int */
     private $length;
@@ -22,8 +22,12 @@ class Flow
     /** @var object */
     private $reference = null;
     
+    private $timezone = null;
+    
     public function __construct($sessions, $time = null)
     {
+        $this->timezone = (new DateTime())->getTimezone();
+        
         if ($sessions) {
             // create sessions loop
             $sessionsCount = count($sessions);
@@ -41,6 +45,11 @@ class Flow
                 $this->setTime($time);
             }
         }
+    }
+    
+    public function hasSessions()
+    {
+        return !!$this->sessions;
     }
 
     /**
@@ -62,14 +71,15 @@ class Flow
         $placeholder->length = $session->date->format('U') - $placeholder->date->format('U');
         $placeholder->offset = 0;
         $placeholder->next = $session;
-        $placeholder->color = '#fff';
-        return null;
+        $placeholder->color = '#ccc';
+        return $placeholder;
     }
     
     public function setTime($time)
     {
         if (!$time instanceof DateTime) {
             $this->time = DateTime::createFromFormat('U', $time);
+            $this->time->setTimezone($this->timezone);
         }
         else {
             $this->time = clone $time;
@@ -98,14 +108,23 @@ class Flow
         return null;
     }
     
+    public function getFirstPublishedSession()
+    {
+        return $this->sessions[count($this->sessions) - 1];
+    }
+    
     public function next()
     {
         if ($this->reference) {
             
-            // move time
-            $this->time->add(DateInterval::createFromDateString(
+            $test = clone $this->time;
+            $test->add(DateInterval::createFromDateString(
                 sprintf('%d seconds', $this->reference->length)
             ));
+
+            // move time
+            $this->time = DateTime::createFromFormat('U', (int)$this->time->format('U') + $this->reference->length);
+            $this->time->setTimezone($this->timezone);
             
             // move to next published session
             do {
@@ -213,5 +232,10 @@ class Flow
             }
         }
         return $output;
+    }
+
+    public function getTimezone()
+    {
+        return $this->timezone;
     }
 }
